@@ -9,14 +9,14 @@
           <el-form-item>
             <el-input v-model="form.mobile" placeholder="请输入手机号哦"></el-input>
           </el-form-item>
-          <!-- 支持栅格布局，一共24列 -->
-          <el-col :span="13">
-            <el-input v-model="form.code" placeholder="请输入验证码"></el-input>
-          </el-col>
-          <el-col :span="7" :offset="2">
-            <el-button>获取验证码</el-button>
-          </el-col>
           <el-form-item>
+          <!-- 支持栅格布局，一共24列 -->
+            <el-col :span="13">
+              <el-input v-model="form.code" placeholder="请输入验证码"></el-input>
+            </el-col>
+            <el-col :span="7" :offset="2">
+              <el-button @click="handSendcode">获取验证码</el-button>
+            </el-col>
           </el-form-item>
           <el-form-item>
             <!-- 给组件加class  会作用到它的根元素 -->
@@ -29,12 +29,13 @@
 </template>
 
 <script>
+import axios from 'axios'
 export default {
   name: 'AppLogin',
   data () {
     return {
       form: {
-        mobile: '',
+        mobile: '18404987696',
         code: ''
       }
     }
@@ -42,6 +43,15 @@ export default {
   methods: {
     onSubmit () {
       console.log('submit!')
+    },
+    handSendcode () {
+      const { mobile } = this.form
+      axios({
+        method: 'GET',
+        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
+      }).then(res => {
+        console.log(res.data)
+      })
     }
   },
   components: {}
