@@ -73,7 +73,22 @@ export default {
             // ready以后才可以显示验证码
             captchaObj.verify()// 显示验证码
           }).onSuccess(function () {
-            console.log('验证通过')// 二次验证 （文档）
+            // console.log('验证通过')// 二次验证 （文档）
+            const {
+              geetest_challenge: challenge,
+              geetest_seccode: seccode,
+              geetest_validate: validate } = captchaObj.getValidate()
+            axios({
+              method: 'GET',
+              url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
+              params: {// 用来传递query查询字符串参数
+                challenge,
+                seccode,
+                validate
+              }
+            }).then(res => {
+              console.log(res.data)
+            })
           })
         })
       })
