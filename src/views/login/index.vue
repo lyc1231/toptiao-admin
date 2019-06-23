@@ -23,6 +23,10 @@
               <el-button @click="handleSendcode">获取验证码</el-button>
             </el-col>
           </el-form-item>
+          <el-form-item prop="checked">
+            <el-checkbox v-model="form.checked"></el-checkbox>
+            <span>我已阅读并同意<a href="#">用户协议</a>和<a href="#">服务条款</a></span>
+          </el-form-item>
           <el-form-item>
             <!-- 给组件加class  会作用到它的根元素 -->
             <el-button class="btn-login"
@@ -46,7 +50,8 @@ export default {
     return {
       form: {
         mobile: '18404987696',
-        code: ''
+        code: '',
+        checked: ''
       },
       loginLoading: false,
       rules: {
@@ -57,6 +62,10 @@ export default {
         code: [
           { required: true, message: '请输入验证码', trigger: 'blur' },
           { len: 6, message: '6位验证码', trigger: 'blur' }
+        ],
+        checked: [
+          { required: true, message: '请勾选', trigger: 'blur' },
+          { pattern: /true/, message: '请勾选', trigger: 'change' }
         ]
       },
       captchaObj: null// 通过 initGeetest 得到的极验验证码对象  用于下面的if判断
@@ -171,5 +180,9 @@ export default {
   display: flex;
   justify-content: center;
   margin-bottom: 10px;
+}
+.el-checkbox {
+  margin-left: 20px;
+  margin-right: 15px;
 }
 </style>
