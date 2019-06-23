@@ -31,6 +31,7 @@
 <script>
 import axios from 'axios'
 import '@/vendor/gt'
+
 export default {
   name: 'AppLogin',
   data () {
@@ -38,7 +39,8 @@ export default {
       form: {
         mobile: '18404987696',
         code: ''
-      }
+      },
+      captchaObj: null// 通过 initGeetest 得到的极验验证码对象  用于下面的if判断
     }
   },
   methods: {
@@ -47,11 +49,33 @@ export default {
     },
     handSendcode () {
       const { mobile } = this.form
+
+      if (this.captchaObj) {
+        return this.captchaObj.verify()// 有 captchaObj 的话直接弹出验证码
+      }
+
       axios({
         method: 'GET',
         url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
       }).then(res => {
-        console.log(res.data)
+        const data = res.data.data
+        window.initGeetest({// 解决报错  加上window前缀
+          // 以下配置参数来自服务端 SDK
+          gt: data.gt,
+          challenge: data.challenge,
+          offline: !data.success,
+          new_captcha: data.new_captcha,
+          product: 'bind' // 影藏按钮式（极验文档）
+        }, captchaObj => {
+          this.captchaObj = captchaObj// 给captchaObj赋值  为了解决重复创建验证码弹框的问题
+          // 这里可以调用验证实例 captchaObj 的实例方法
+          captchaObj.onReady(function () {
+            // ready以后才可以显示验证码
+            captchaObj.verify()// 显示验证码
+          }).onSuccess(function () {
+            console.log('验证通过')// 二次验证 （文档）
+          })
+        })
       })
     }
   },
