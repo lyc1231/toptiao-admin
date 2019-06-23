@@ -5,22 +5,30 @@
         <img src="./logo_index.png" alt="黑马头条号">
       </div>
       <div class="login-form">
-        <el-form ref="form" :model="form">
-          <el-form-item>
+        <!--
+          表单验证：
+          rules：配置验证规则 将需要验证的字段通过 prop 属性配置到el-form-item上
+          ref：获取表单组件，可以手动调用表单组件的验证方法
+         -->
+        <el-form ref="form" :model="form" :rules="rules">
+          <el-form-item prop="mobile">
             <el-input v-model="form.mobile" placeholder="请输入手机号哦"></el-input>
           </el-form-item>
-          <el-form-item>
+          <el-form-item prop="code">
           <!-- 支持栅格布局，一共24列 -->
             <el-col :span="13">
               <el-input v-model="form.code" placeholder="请输入验证码"></el-input>
             </el-col>
             <el-col :span="7" :offset="2">
-              <el-button @click="handSendcode">获取验证码</el-button>
+              <el-button @click="handleSendcode">获取验证码</el-button>
             </el-col>
           </el-form-item>
           <el-form-item>
             <!-- 给组件加class  会作用到它的根元素 -->
-            <el-button class="btn-login" type="primary" @click="onSubmit">登录</el-button>
+            <el-button class="btn-login"
+            type="primary"
+            @click="handleLogin"
+            :loading="loginLoading">登录</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -40,14 +48,59 @@ export default {
         mobile: '18404987696',
         code: ''
       },
+      loginLoading: false,
+      rules: {
+        mobile: [
+          { required: true, message: '请输入手机号码', trigger: 'blur' },
+          { len: 11, message: '11位手机号', trigger: 'blur' }
+        ],
+        code: [
+          { required: true, message: '请输入验证码', trigger: 'blur' },
+          { len: 6, message: '6位验证码', trigger: 'blur' }
+        ]
+      },
       captchaObj: null// 通过 initGeetest 得到的极验验证码对象  用于下面的if判断
     }
   },
   methods: {
-    onSubmit () {
-      console.log('submit!')
+    handleLogin () {
+      // 表单组件有一个方法 validate keyi 用于获取当前表单的验证状态
+      this.$refs['form'].validate(valid => {
+        if (!valid) {
+          return
+        }
+        // 表单验证通过， 提交
+        this.submitlogin()
+      })
     },
-    handSendcode () {
+
+    submitlogin () {
+      this.loginLoading = true
+      axios({
+        method: 'POST',
+        url: 'http://ttapi.research.itcast.cn/mp/v1_0/authorizations',
+        data: this.form
+      }).then(res => { // 大于等于200 && 小于等于400 的状态码都会进入这里
+        // element 消息提示组件
+        this.$message({
+          message: '登录成功了呢',
+          type: 'success'
+        })
+        this.loginLoading = false
+        // 建议路由跳转都使用name去跳转，可以方便进行路由传参
+        this.$router.push({
+          name: 'home'
+        })
+      })
+        .catch(err => { // 大于等于400的状态码都会进入catch中
+          if (err.response.status === 400) {
+            this.$message.error('登录失败，手机号或验证码错误')
+          }
+          this.loginLoading = false
+        })
+    },
+
+    handleSendcode () {
       const { mobile } = this.form
 
       if (this.captchaObj) {
@@ -59,7 +112,7 @@ export default {
         url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
       }).then(res => {
         const data = res.data.data
-        window.initGeetest({// 解决报错  加上window前缀
+        window.initGeetest({ // 解决报错  加上window前缀
           // 以下配置参数来自服务端 SDK
           gt: data.gt,
           challenge: data.challenge,
