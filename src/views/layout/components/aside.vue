@@ -11,7 +11,7 @@
       index 导航标识，可以用作路由导航路径，必须唯一
    -->
   <el-menu
-    default-active="1"
+    default-active="/"
     @open="handleOpen"
     @close="handleClose"
     router

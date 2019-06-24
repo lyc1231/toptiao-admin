@@ -7,7 +7,9 @@
       <el-header>
         <Appheader/>>
       </el-header>
-      <el-main>Main</el-main>
+      <el-main>
+        <router-view></router-view>
+      </el-main>
     </el-container>
   </el-container>
 
@@ -38,6 +40,6 @@ export default {
 }
 
 .el-main {
-  background: orange;
+  background: #fff;
 }
 </style>
