@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-// import { userInfo } from 'os';
+import nprogress from 'nprogress'
 
 Vue.use(Router)
 
@@ -25,6 +25,11 @@ const router = new Router({
           name: 'publish',
           path: '/publish',
           component: () => import('@/views/publish')
+        },
+        {
+          name: 'articlelist',
+          path: '/article',
+          component: () => import('@/views/article')
         }
       ]
     }
@@ -38,6 +43,8 @@ const router = new Router({
  * next 允许通过的方法
  */
 router.beforeEach((to, from, next) => {
+  // 进度条组件开始
+  nprogress.start()
   const userInfo = window.localStorage.getItem('user_info')
   // 如果不是登录页面，判断他的登录状态
   if (to.path !== '/login') {
@@ -56,6 +63,11 @@ router.beforeEach((to, from, next) => {
       next()
     }
   }
+})
+
+router.afterEach((to, from) => {
+  // 进度条组件在这里结束
+  nprogress.done()
 })
 
 export default router
