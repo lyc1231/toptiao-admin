@@ -33,12 +33,8 @@ export default {
   height: 100%;
 }
 
-.el-aside {
-  background: #ccc;
-}
-
 .el-header {
-  background: pink;
+  background: #ccc;
 }
 
 .el-main {
