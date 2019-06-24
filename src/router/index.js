@@ -1,9 +1,10 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+// import { userInfo } from 'os';
 
 Vue.use(Router)
 
-export default new Router({
+const router = new Router({
   routes: [
     {
       name: 'login',
@@ -29,3 +30,32 @@ export default new Router({
     }
   ]
 })
+
+/**
+ * 所有路由导航都要经过这里
+ * to 去哪儿
+ * from 来自哪里
+ * next 允许通过的方法
+ */
+router.beforeEach((to, from, next) => {
+  const userInfo = window.localStorage.getItem('user_info')
+  // 如果不是登录页面，判断他的登录状态
+  if (to.path !== '/login') {
+    // 如果没登录，让他跳转到登录页
+    if (!userInfo) {
+      return next({ name: 'login' })
+    } else {
+      next()
+    }
+  } else {
+    // 如果登录了，就不能访问登录页
+    if (userInfo) {
+      next(false)
+    } else {
+      // 如果没有登录，才可以访问登录页
+      next()
+    }
+  }
+})
+
+export default router
