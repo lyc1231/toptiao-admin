@@ -20,7 +20,13 @@
               <el-input v-model="form.code" placeholder="请输入验证码"></el-input>
             </el-col>
             <el-col :span="7" :offset="2">
-              <el-button @click="handleSendcode">获取验证码</el-button>
+              <!-- <el-button @click="handleSendcode">获取验证码</el-button> -->
+              <el-button
+              @click="handleSendcode"
+              :disabled="!!codeTime || codeLoading">
+                {{ codeTime ? `剩余${codeSeconds}秒` : `获取验证码` }}
+              </el-button>
+
             </el-col>
           </el-form-item>
           <el-form-item prop="checked">
@@ -43,6 +49,8 @@
 <script>
 import axios from 'axios'
 import '@/vendor/gt'
+// import { constants } from 'fs'
+const djs = 5
 
 export default {
   name: 'AppLogin',
@@ -68,7 +76,11 @@ export default {
           { pattern: /true/, message: '请勾选', trigger: 'change' }
         ]
       },
-      captchaObj: null// 通过 initGeetest 得到的极验验证码对象  用于下面的if判断
+      captchaObj: null, // 通过 initGeetest 得到的极验验证码对象  用于下面的if判断
+      codeSeconds: djs, // 倒计时时间
+      codeTime: null, // 倒计时定时器
+      sendMobile: '', // 保存初始化后发送的手机号
+      codeLoading: false
     }
   },
   methods: {
@@ -109,16 +121,17 @@ export default {
         })
     },
 
-    handleSendcode () {
-      const { mobile } = this.form
-
+    showGeetest () {
       if (this.captchaObj) {
         return this.captchaObj.verify()// 有 captchaObj 的话直接弹出验证码
       }
 
+      // 初始化验证码期间，禁用按钮的点击状态
+      this.codeLoading = true
+
       axios({
         method: 'GET',
-        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${mobile}`
+        url: `http://ttapi.research.itcast.cn/mp/v1_0/captchas/${this.form.mobile}`
       }).then(res => {
         const data = res.data.data
         window.initGeetest({ // 解决报错  加上window前缀
@@ -131,10 +144,13 @@ export default {
         }, captchaObj => {
           this.captchaObj = captchaObj// 给captchaObj赋值  为了解决重复创建验证码弹框的问题
           // 这里可以调用验证实例 captchaObj 的实例方法
-          captchaObj.onReady(function () {
+          captchaObj.onReady(() => {
             // ready以后才可以显示验证码
+            this.sendMobile = this.form.mobile
             captchaObj.verify()// 显示验证码
-          }).onSuccess(function () {
+            // 验证码初始化好了，让 “获取验证码” 按钮可点击
+            this.codeLoading = false
+          }).onSuccess(() => {
             // console.log('验证通过')// 二次验证 （文档）
             const {
               geetest_challenge: challenge,
@@ -142,7 +158,7 @@ export default {
               geetest_validate: validate } = captchaObj.getValidate()
             axios({
               method: 'GET',
-              url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${mobile}`,
+              url: `http://ttapi.research.itcast.cn/mp/v1_0/sms/codes/${this.form.mobile}`,
               params: {// 用来传递query查询字符串参数
                 challenge,
                 seccode,
@@ -150,9 +166,46 @@ export default {
               }
             }).then(res => {
               console.log(res.data)
+              // 发送短信之后开始倒计时
+              this.daojitime()
             })
           })
         })
+      })
+    },
+    daojitime () {
+      this.codeTime = window.setInterval(() => {
+        this.codeSeconds--
+        if (this.codeSeconds <= 0) {
+          this.codeSeconds = djs// 倒计时时间回复初始状态
+          window.clearInterval(this.codeTime)// 清除计时器
+          this.codeTime = null// 清除定时器标记
+        }
+      }, 1000)
+    },
+    handleSendcode () {
+      // 单独校验手机号码是否有效  validateField 方法
+      this.$refs['form'].validateField('mobile', errmsg => {
+        if (errmsg.trim().length > 0) {
+          return
+        }
+        // 手机号码有效，初始化验证码
+        // this.showGeetest()
+
+        // 是否有验证码插件
+        if (this.captchaObj) {
+          // 如果输入的手机号与初始化验证码后的手机号不同
+          if (this.form.mobile !== this.sendMobile) {
+            // 就基于当前输入的手机号重新初始化
+            this.showGeetest()
+          } else {
+            // 相同的话就直接弹出验证码
+            this.captchaObj.verify()
+          }
+        } else {
+          // 第一次初始化的验证码插件
+          this.showGeetest()
+        }
       })
     }
   },
