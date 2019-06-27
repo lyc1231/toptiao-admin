@@ -47,11 +47,8 @@
 </template>
 
 <script>
-// import this.$http from 'this.$http'
 import '@/vendor/gt'
-// import { constants } from 'fs'
-const djs = 5
-
+const djs = 60
 export default {
   name: 'AppLogin',
   data () {
@@ -153,8 +150,8 @@ export default {
             captchaObj.verify()// 显示验证码
             // 验证码初始化好了，让 “获取验证码” 按钮可点击
             this.codeLoading = false
-          }).onSuccess(() => {
-            // console.log('验证通过')// 二次验证 （文档）
+          }).onSuccess(() => { // 二次验证 拖动滑块人机交互 （文档）
+            // console.log('验证通过')
             const {
               geetest_challenge: challenge,
               geetest_seccode: seccode,
@@ -211,8 +208,7 @@ export default {
         }
       })
     }
-  },
-  components: {}
+  }
 }
 </script>
 
