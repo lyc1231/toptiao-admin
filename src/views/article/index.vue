@@ -3,8 +3,7 @@
     <!-- 筛选区域 -->
     <el-card class="search-card">
     <div slot="header" class="clearfix">
-      <span>卡片名称</span>
-      <el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>
+      <span>筛选条件</span>
     </div>
     <el-form ref="form" :model="form" label-width="80px">
       <el-form-item label="特殊资源">
@@ -38,8 +37,7 @@
     <!-- 列表 -->
     <el-card class="list-card">
       <div slot="header" class="clearfix">
-        <span>卡片名称</span>
-        <el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>
+        <span>共找到15条符合条件的内容</span>
       </div>
       <!--
         table 表格组件中
@@ -50,7 +48,7 @@
         class="list-table"
         :data="articles"
         style="width: 100%"
-        v-loading="articleLoading">
+        v-loading="articleloading">
         <el-table-column
           prop="cover.images[0]"
           label="封面"
@@ -63,7 +61,7 @@
             自定义列模板，el-table-column 的 prop 就没有意义了
           -->
           <template slot-scope="scope">
-            <img :src="scope.row.cover.images[0]">
+            <img width="30" :src="scope.row.cover.images[0]">
           </template>
         </el-table-column>
         <el-table-column
@@ -80,6 +78,21 @@
           prop="status"
           label="状态"
           width="60">
+        </el-table-column>
+        <el-table-column
+          label="编辑&删除"
+          width="200">
+          <template slot-scope="scope">
+            <el-button
+            type="primary"
+            icon="el-icon-edit"
+            circle plain></el-button>
+            <el-button
+            type="danger"
+            icon="el-icon-delete"
+            @click="handleDelete(scope.row)"
+            circle plain></el-button>
+          </template>
         </el-table-column>
       </el-table>
         <!-- 数据分页 -->
@@ -119,7 +132,8 @@ export default {
         value1: ''
       },
       total: 0,
-      articleloading: false
+      articleloading: false,
+      page: 1
     }
   },
   created () {
@@ -145,8 +159,42 @@ export default {
       })
     },
     handleCurrentChange (page) {
+      this.page = page
       // 页码发生改变时，请求该页码对应的数据
       this.getToken(page)
+    },
+    handleDelete (deleted) { // 被删除的那一项
+      // this.$http({
+      //   method: 'DELETE',
+      //   url: `articles/${deleted.id}`
+      // }).then(data => {
+      //   console.log(data)
+      //   // this.getToken(this.page)
+      // })
+      this.$confirm('确认删除吗？', '删除提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => { // 确定执行
+        // 发送删除请求
+        this.$http({
+          method: 'DELETE',
+          url: `/articles/${deleted.id}`
+        }).then(data => {
+          // 提示删除成功
+          this.$message({
+            type: 'success',
+            message: '删除成功!'
+          })
+          // 重新加载数据列表
+          this.loadArticles(this.page)
+        })
+      }).catch(() => { // 取消执行
+        this.$message({
+          type: 'info',
+          message: '已取消删除'
+        })
+      })
     }
   }
 }
