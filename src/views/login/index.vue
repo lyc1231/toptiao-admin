@@ -54,8 +54,8 @@ export default {
   data () {
     return {
       form: {
-        mobile: '18404987696',
-        code: '',
+        mobile: '13911111111',
+        code: '246810',
         checked: ''
       },
       loginLoading: false,
@@ -98,9 +98,9 @@ export default {
         method: 'POST',
         url: '/authorizations',
         data: this.form
-      }).then(res => { // 大于等于200 && 小于等于400 的状态码都会进入这里
+      }).then(data => { // 大于等于200 && 小于等于400 的状态码都会进入这里
         // 登录成功，将接口返回的用户信息数据放到本地存储
-        window.localStorage.setItem('user_info', JSON.stringify(res.data.data))
+        window.localStorage.setItem('user_info', JSON.stringify(data))
 
         // element 消息提示组件
         this.$message({
@@ -132,8 +132,8 @@ export default {
       this.$http({
         method: 'GET',
         url: `/captchas/${this.form.mobile}`
-      }).then(res => {
-        const data = res.data.data
+      }).then(data => {
+        // const data = res.data.data  响应拦截器中统一处理了 不用再单独获取了
         window.initGeetest({ // 解决报错  加上window前缀
           // 以下配置参数来自服务端 SDK
           gt: data.gt,
@@ -164,8 +164,8 @@ export default {
                 seccode,
                 validate
               }
-            }).then(res => {
-              console.log(res.data)
+            }).then(data => {
+              // console.log(res.data)
               // 发送短信之后开始倒计时
               this.daojitime()
             })

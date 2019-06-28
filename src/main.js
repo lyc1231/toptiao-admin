@@ -14,9 +14,26 @@ axios.defaults.baseURL = 'http://ttapi.research.itcast.cn/mp/v1_0/'
 // 请求拦截器
 axios.interceptors.request.use(config => {
   const userInfo = JSON.parse(window.localStorage.getItem('user_info'))
-  config.headers.Authorization = `Bearer ${userInfo.token}`
+  if (userInfo) { // 如果 user_info 登录了再去加token   解决登录页请求没有 token 登录不了的问题   登录的相关接口不需要 token
+    config.headers.Authorization = `Bearer ${userInfo.token}`
+  }
   return config// 允许通过的方式
 }, error => {
+  return Promise.reject(error)
+})
+
+// 响应拦截器
+axios.interceptors.response.use(response => {
+  return response.data.data// 接口文档中要的数据 data.data（对返回数据格式的处理）
+}, error => {
+  // console.log('response error=>', error)
+  const status = error.response.status
+  if (status === 401) {
+    // 一定要删除本地存储中的 token
+    window.localStorage.removeItem('user_info')
+    // 跳转到登录页
+    router.push({ name: 'login' })
+  }
   return Promise.reject(error)
 })
 

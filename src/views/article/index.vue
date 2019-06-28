@@ -1,5 +1,4 @@
 <template>
-<!-- import { userInfo } from 'os'; -->
   <div>
     <!-- 筛选区域 -->
     <el-card class="search-card">
@@ -42,30 +41,56 @@
         <span>卡片名称</span>
         <el-button style="float: right; padding: 3px 0" type="text">操作按钮</el-button>
       </div>
+      <!--
+        table 表格组件中
+        :data 后台数据
+        prop  数据中要显示的属性
+       -->
       <el-table
         class="list-table"
-        :data="tableData"
+        :data="articles"
         style="width: 100%">
         <el-table-column
-          prop="date"
-          label="日期"
-          width="180">
+          prop="cover.images[0]"
+          label="封面"
+          width="60">
+          <!-- 表格列默认只能输出文本  自定义需要下面这样 -->
+          <!--
+            slot-scope 是插槽作用域，现在先听个名词，你要知道的是值 scope 是起的一个名字
+            scope 中有个成员叫 row
+            也就是说 scope.row 就是当前的遍历项对象
+            自定义列模板，el-table-column 的 prop 就没有意义了
+          -->
+          <template slot-scope="scope">
+            <img :src="scope.row.cover.images[0]">
+          </template>
         </el-table-column>
         <el-table-column
-          prop="name"
-          label="姓名"
-          width="180">
+          prop="title"
+          label="标题"
+          width="400">
         </el-table-column>
         <el-table-column
-          prop="address"
-          label="地址">
+          prop="pubdate"
+          label="发布日期"
+          width="400">
+        </el-table-column>
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="60">
         </el-table-column>
       </el-table>
         <!-- 数据分页 -->
+        <!--
+          element-ui pagination 组件中的自定义方法
+          current-change 返回当前的页码
+         -->
           <el-pagination
             background
             layout="prev, pager, next"
-            :total="1000">
+            :total="total"
+            @current-change="handleCurrentChange">
           </el-pagination>
         <!-- /数据分页 -->
    </el-card>
@@ -79,25 +104,9 @@ export default {
   name: 'ArticleList',
   data () {
     return {
-      tableData: [{
-        date: '2016-05-02',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1518 弄'
-      }, {
-        date: '2016-05-04',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1517 弄'
-      }, {
-        date: '2016-05-01',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1519 弄'
-      }, {
-        date: '2016-05-03',
-        name: '王小虎',
-        address: '上海市普陀区金沙江路 1516 弄'
-      }],
+      articles: [], // 后台给的列表数据
       form: {
-        name: '',
+        articles: '',
         region: '',
         date1: '',
         date2: '',
@@ -106,38 +115,33 @@ export default {
         resource: '',
         desc: '',
         value1: ''
-      }
+      },
+      total: 0
     }
   },
   created () {
     this.getToken()
   },
-  // created () {
-  //   this.$http({
-  //     method: 'GET',
-  //     url: '/articles',
-  //     headers: { // 自定义发送请求头
-  //       Authorization: `Bearer ${userInfo.token}` // 注意：Bearer 和 token 之间要有空格
-  //     }
-  //   }).then(res => {
-  //     console.log(res)
-  //   })
-  // },
   methods: {
     onSubmit () {
       console.log('submit!')
     },
-    getToken () {
+    getToken (page = 1) {
       this.$http({
         method: 'GET',
         url: '/articles',
-        headers: { // 自定义发送请求头
-          // 在 Authorization 请求头中携带的token，格式为"Bearer "拼接上token，注意Bearer后有一个空格  (token说明)
-          // Authorization: `Bearer ${userInfo.token}` // token 在本地存储的 user_info 中
+        params: { // 接口文档 获取文章列表中的 query 参数 设置页码和每页数量
+          page, // 请求数据的页码，不传默认为 1
+          per_page: 10// 请求数据的每页大小，不传默认为 10
         }
-      }).then(res => {
-        console.log(res)
+      }).then(data => {
+        this.articles = data.results // 列表数据
+        this.total = data.total_count // 数据的总条数
       })
+    },
+    handleCurrentChange (page) {
+      // 页码发生改变时，请求该页码对应的数据
+      this.getToken(page)
     }
   }
 }
