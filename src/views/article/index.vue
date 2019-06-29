@@ -75,9 +75,11 @@
           width="400">
         </el-table-column>
         <el-table-column
-          prop="status"
-          label="状态"
-          width="60">
+          width="150">
+          <template slot-scope="scope">
+            <!-- 遍历当前项的索引当做状态码 -->
+            <el-tag :type="status[scope.row.status].type">{{ status[scope.row.status].lable }}</el-tag>
+          </template>
         </el-table-column>
         <el-table-column
           label="编辑&删除"
@@ -133,7 +135,29 @@ export default {
       },
       total: 0,
       articleloading: false,
-      page: 1
+      page: 1,
+      status: [
+        {
+          type: 'info',
+          lable: '草稿'
+        },
+        {
+          type: '',
+          lable: '待审核'
+        },
+        {
+          type: 'success',
+          lable: '审核通过'
+        },
+        {
+          type: 'danger',
+          lable: '审核失败'
+        },
+        {
+          type: 'warning',
+          lable: '已删除'
+        }
+      ]
     }
   },
   created () {
