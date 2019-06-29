@@ -7,26 +7,30 @@
     </div>
     <el-form ref="form" :model="form" label-width="80px">
       <el-form-item label="状态">
-        <el-radio-group v-model="form.resource">
+        <el-radio-group v-model="filterParams.status">
+          <el-radio label="">全部</el-radio>
+          <!-- label中 index+空字符串 数字转字符串 解决索引为 0 布尔值是false的问题 -->
           <el-radio
-          v-for="item in status"
-          :key="item.lable"
-          :label="item.lable"
-          ></el-radio>
+          v-for="(item, index) in typestatus"
+          :key="item.label"
+          :label="index + ''"
+          >{{ item.label }}</el-radio>
         </el-radio-group>
       </el-form-item>
       <el-form-item label="频道">
-        <el-select v-model="form.region" placeholder="请选择活动区域">
+        <el-select v-model="filterParams.channel_id" placeholder="请选择活动区域">
           <el-option
           v-for="item in channels"
           :key="item.id"
           :label="item.name"
-          value="item.id"></el-option>
+          :value="item.id"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="活动形式">
         <el-date-picker
-          v-model="form.value1"
+          value-format="yyyy-MM-dd"
+          v-model="begin_end_pubdate"
+          @change="handleDateChange"
           type="daterange"
           range-separator="-"
           start-placeholder="开始日期"
@@ -34,7 +38,10 @@
         </el-date-picker>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="onSubmit">查询</el-button>
+        <el-button
+        type="primary"
+        :loading="articleloading"
+        @click="onSubmit">查询</el-button>
       </el-form-item>
     </el-form>
   </el-card>
@@ -43,7 +50,7 @@
     <!-- 列表 -->
     <el-card class="list-card">
       <div slot="header" class="clearfix">
-        <span>共找到15条符合条件的内容</span>
+        <span>共找到<strong>{{ total }}</strong>条符合条件的内容</span>
       </div>
       <!--
         table 表格组件中
@@ -84,7 +91,7 @@
           width="150">
           <template slot-scope="scope">
             <!-- 遍历当前项的索引当做状态码 -->
-            <el-tag :type="status[scope.row.status].type">{{ status[scope.row.status].lable }}</el-tag>
+            <el-tag :type="typestatus[scope.row.status].type">{{ typestatus[scope.row.status].label }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column
@@ -129,7 +136,7 @@ export default {
     return {
       articles: [], // 后台给的列表数据
       form: {
-        articles: '',
+        name: '',
         region: '',
         date1: '',
         date2: '',
@@ -139,51 +146,69 @@ export default {
         desc: '',
         value1: ''
       },
-      total: 0,
-      articleloading: false,
-      page: 1,
-      status: [ // 计算属性  查 vue 官方文档=>模板语法=>计算属性和侦听器
+      total: 0, // 总数据的条数
+      articleloading: false, // 文档中的 loading 效果 默认为 false
+      page: 1, // 当前页码数
+      typestatus: [ // 计算属性  查 vue 官方文档=>模板语法=>计算属性和侦听器
       // 本质是函数但只能当做属性来用
         {
           type: 'info',
-          lable: '草稿'
+          label: '草稿'
         },
         {
           type: '',
-          lable: '待审核'
+          label: '待审核'
         },
         {
           type: 'success',
-          lable: '审核通过'
+          label: '审核通过'
         },
         {
           type: 'danger',
-          lable: '审核失败'
+          label: '审核失败'
         },
         {
           type: 'warning',
-          lable: '已删除'
+          label: '已删除'
         }
       ],
-      channels: []
+      channels: [], // 频道列表
+      filterParams: { // 文章查询条件参数
+        status: '', // 文章状态
+        channel_id: '', // 频道id
+        begin_pubdate: '', // 开始时间
+        end_pubdate: '' // 结束时间
+      },
+      begin_end_pubdate: [] // 存储日期选择器同步的 [开始时间，结束时间]，这个字段没啥用，只是日期选择器必须 v-mode 绑定一个数据才会触发 change 事件
     }
   },
   created () {
-    this.getToken() // 加 token & 加载文章列表
+    this.loadArticles() // 加 token & 加载文章列表
     this.loadChannels() // 加载频道列表
   },
   methods: {
+
+    // 查询筛选按钮
     onSubmit () {
-      console.log('submit!')
+      this.loadArticles() // 查询筛选 重新加载页面
     },
-    getToken (page = 1) {
+
+    // 加载文章列表页
+    loadArticles (page = 1) {
       this.articleloading = true
+      const filterData = {}
+      for (let key in this.filterParams) {
+        if (this.filterParams[key]) {
+          filterData[key] = this.filterParams[key]
+        }
+      }
       this.$http({
         method: 'GET',
         url: '/articles',
         params: { // 接口文档 获取文章列表中的 query 参数 设置页码和每页数量
           page, // 请求数据的页码，不传默认为 1
-          per_page: 10// 请求数据的每页大小，不传默认为 10
+          per_page: 10, // 请求数据的每页大小，不传默认为 10
+          ...filterData // 将对象混入当前对象，说白就是对象拷贝
         }
       }).then(data => {
         this.articles = data.results // 列表数据
@@ -191,18 +216,22 @@ export default {
         this.articleloading = false
       })
     },
+
+    // 页码的 change 事件
     handleCurrentChange (page) {
       this.page = page
       // 页码发生改变时，请求该页码对应的数据
-      this.getToken(page)
+      this.loadArticles(page)
     },
+
+    // 文章列表的删除操作
     handleDelete (deleted) { // 被删除的那一项
       // this.$http({
       //   method: 'DELETE',
       //   url: `articles/${deleted.id}`
       // }).then(data => {
       //   console.log(data)
-      //   // this.getToken(this.page)
+      //   // this.loadArticles(this.page)
       // })
       this.$confirm('确认删除吗？', '删除提示', {
         confirmButtonText: '确定',
@@ -229,13 +258,22 @@ export default {
         })
       })
     },
-    loadChannels () { // 筛选表单字段 接口文档获取文章频道
+
+    // 筛选表单字段 接口文档获取文章频道
+    loadChannels () {
       this.$http({
         method: 'GET',
         url: '/channels'
       }).then(data => {
         this.channels = data.channels
       })
+    },
+
+    // 日期选择器的 change 事件   element-ui 中的 datetime-picker
+    handleDateChange (value) {
+      // console.log(value)
+      this.filterParams.begin_pubdate = value[0]
+      this.filterParams.end_pubdate = value[1]
     }
   }
 }
