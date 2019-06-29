@@ -6,16 +6,22 @@
       <span>筛选条件</span>
     </div>
     <el-form ref="form" :model="form" label-width="80px">
-      <el-form-item label="特殊资源">
+      <el-form-item label="状态">
         <el-radio-group v-model="form.resource">
-          <el-radio label="线上品牌商赞助"></el-radio>
-          <el-radio label="线下场地免费"></el-radio>
+          <el-radio
+          v-for="item in status"
+          :key="item.lable"
+          :label="item.lable"
+          ></el-radio>
         </el-radio-group>
       </el-form-item>
-      <el-form-item label="活动区域">
+      <el-form-item label="频道">
         <el-select v-model="form.region" placeholder="请选择活动区域">
-          <el-option label="区域一" value="shanghai"></el-option>
-          <el-option label="区域二" value="beijing"></el-option>
+          <el-option
+          v-for="item in channels"
+          :key="item.id"
+          :label="item.name"
+          value="item.id"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="活动形式">
@@ -136,7 +142,8 @@ export default {
       total: 0,
       articleloading: false,
       page: 1,
-      status: [
+      status: [ // 计算属性  查 vue 官方文档=>模板语法=>计算属性和侦听器
+      // 本质是函数但只能当做属性来用
         {
           type: 'info',
           lable: '草稿'
@@ -157,11 +164,13 @@ export default {
           type: 'warning',
           lable: '已删除'
         }
-      ]
+      ],
+      channels: []
     }
   },
   created () {
-    this.getToken()
+    this.getToken() // 加 token & 加载文章列表
+    this.loadChannels() // 加载频道列表
   },
   methods: {
     onSubmit () {
@@ -218,6 +227,14 @@ export default {
           type: 'info',
           message: '已取消删除'
         })
+      })
+    },
+    loadChannels () { // 筛选表单字段 接口文档获取文章频道
+      this.$http({
+        method: 'GET',
+        url: '/channels'
+      }).then(data => {
+        this.channels = data.channels
       })
     }
   }
