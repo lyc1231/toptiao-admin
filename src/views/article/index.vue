@@ -5,7 +5,7 @@
     <div slot="header" class="clearfix">
       <span>筛选条件</span>
     </div>
-    <el-form ref="form" :model="form" label-width="80px">
+    <el-form ref="form" :model="filterParams" label-width="80px">
       <el-form-item label="状态">
         <el-radio-group v-model="filterParams.status">
           <el-radio label="">全部</el-radio>
@@ -120,6 +120,7 @@
             layout="prev, pager, next"
             :total="total"
             :disabled="articleloading"
+            :current-page="page"
             @current-change="handleCurrentChange">
           </el-pagination>
         <!-- /数据分页 -->
@@ -135,17 +136,6 @@ export default {
   data () {
     return {
       articles: [], // 后台给的列表数据
-      form: {
-        name: '',
-        region: '',
-        date1: '',
-        date2: '',
-        delivery: false,
-        type: [],
-        resource: '',
-        desc: '',
-        value1: ''
-      },
       total: 0, // 总数据的条数
       articleloading: false, // 文档中的 loading 效果 默认为 false
       page: 1, // 当前页码数
@@ -190,7 +180,9 @@ export default {
 
     // 查询筛选按钮
     onSubmit () {
-      this.loadArticles() // 查询筛选 重新加载页面
+      // this.loadArticles() // 查询筛选 重新加载页面
+      this.page = 1 // 让分页组件的页码回到第1页
+      this.loadArticles() // 加载第1页的数据
     },
 
     // 加载文章列表页
